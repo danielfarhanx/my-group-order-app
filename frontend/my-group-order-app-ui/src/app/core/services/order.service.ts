@@ -6,6 +6,7 @@ import { map, switchMap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { isPlatformBrowser } from '@angular/common';
 import { environment } from '../../../environments/environment';
+import { CalculationService } from './calculation.service';
 
 // --- UPDATE INTERFACE ---
 export interface IParticipantOrder {
@@ -48,6 +49,7 @@ export class OrderService {
   private supabase!: SupabaseClient;
   private platformId = inject(PLATFORM_ID);
   private authService = inject(AuthService);
+  private calculationService = inject(CalculationService);
 
   // Buat "pemicu" yang bisa kita panggil dari mana saja
   private refreshTrigger = new BehaviorSubject<void>(undefined);
@@ -104,6 +106,7 @@ export class OrderService {
         participant_orders(*, profiles(full_name))
       `)
       .eq('id', id)
+      .order('created_at', { referencedTable: 'participant_orders', ascending: true })
       .single();
 
     if (error) {
@@ -123,49 +126,68 @@ export class OrderService {
   async addParticipantOrder(newOrder: Partial<IParticipantOrder>): Promise<any> {
     if (!this.supabase) throw new Error('Supabase not initialized');
 
-    const { order_id, user_id, item_name, quantity } = newOrder;
+    const { order_id, user_id, item_name, quantity, item_price } = newOrder;
+    if (!order_id) throw new Error('Order ID is missing');
 
-    // 1. Cek apakah sudah ada pesanan untuk user & item yang sama di order ini
-    const { data: existingOrder, error: selectError } = await this.supabase
-      .from('participant_orders')
-      .select('id, quantity')
-      .eq('order_id', order_id)
-      .eq('user_id', user_id)
-      .eq('item_name', item_name)
-      .maybeSingle();
-
-    if (selectError) {
-      console.error('Error checking existing order:', selectError.message);
-      throw selectError;
+    // 1. Ambil data order terbaru untuk mendapatkan aturan diskon & peserta saat ini
+    const currentOrder = await this._fetchOrderById(order_id);
+    if (!currentOrder) {
+      throw new Error('Order tidak ditemukan.');
     }
 
-    // 2. Jika SUDAH ADA, lakukan UPDATE
-    if (existingOrder) {
-      const newQuantity = existingOrder.quantity + (quantity || 1);
+    // 2. Buat "snapshot" hipotetis dari daftar peserta JIKA pesanan ini ditambahkan
+    const existingOrders = currentOrder.participant_orders || [];
+    const hypotheticalOrders = [...existingOrders];
+
+    const existingEntryIndex = hypotheticalOrders.findIndex(
+      p => p.user_id === user_id && p.item_name === item_name
+    );
+
+    if (existingEntryIndex > -1) {
+      // Jika sudah ada, update kuantitasnya di snapshot
+      hypotheticalOrders[existingEntryIndex] = {
+        ...hypotheticalOrders[existingEntryIndex],
+        quantity: hypotheticalOrders[existingEntryIndex].quantity + (quantity || 1)
+      };
+    } else {
+      // Jika belum ada, tambahkan sebagai entri baru di snapshot
+      hypotheticalOrders.push(newOrder as IParticipantOrder);
+    }
+
+    // 3. Lakukan simulasi perhitungan dengan data hipotetis
+    const hypotheticalSummary = this.calculationService.calculateOrderSummary({
+      ...currentOrder,
+      participant_orders: hypotheticalOrders
+    });
+
+    // 4. Validasi: Cek apakah potongan diskon melebihi batas maksimum
+    if (currentOrder.max_discount && currentOrder.max_discount > 0 && hypotheticalSummary.potonganDiskonLepas > currentOrder.max_discount) {
+      // Jika melebihi, tolak pesanan dengan error yang jelas
+      throw new Error(
+        `Pesanan tidak dapat ditambahkan karena akan membuat total diskon (Rp ${hypotheticalSummary.potonganDiskonLepas.toLocaleString()}) melebihi batas maksimum (Rp ${currentOrder.max_discount.toLocaleString()}).`
+      );
+    }
+
+    // 5. Jika validasi lolos, lanjutkan dengan logika upsert seperti biasa
+    // (Kode upsert dari langkah sebelumnya tidak berubah, hanya dipindahkan ke sini)
+    if (existingEntryIndex > -1) {
+      // Lakukan UPDATE
+      const newQuantity = hypotheticalOrders[existingEntryIndex].quantity;
       const { data, error } = await this.supabase
         .from('participant_orders')
-        .update({ quantity: newQuantity })
-        .eq('id', existingOrder.id); // Update berdasarkan ID baris yang ada
-
-      if (error) {
-        console.error('Error updating participant order:', error.message);
-        throw error;
-      }
-      // this.refreshTrigger.next();
+        .update({
+          quantity: newQuantity,
+          created_at: new Date().toISOString()
+        })
+        .eq('id', hypotheticalOrders[existingEntryIndex].id);
+      if (error) throw error;
       return data;
-    }
-
-    // 3. Jika TIDAK ADA, lakukan INSERT baru
-    else {
+    } else {
+      // Lakukan INSERT
       const { data, error } = await this.supabase
         .from('participant_orders')
         .insert(newOrder);
-
-      if (error) {
-        console.error('Error adding participant order:', error.message);
-        throw error;
-      }
-      // this.refreshTrigger.next();
+      if (error) throw error;
       return data;
     }
   }
@@ -345,7 +367,10 @@ export class OrderService {
 
     const { data, error } = await this.supabase
       .from('participant_orders')
-      .update({ quantity: newQuantity })
+      .update({
+        quantity: newQuantity,
+        created_at: new Date().toISOString()
+      })
       .eq('id', participantOrderId);
 
     if (error) {
