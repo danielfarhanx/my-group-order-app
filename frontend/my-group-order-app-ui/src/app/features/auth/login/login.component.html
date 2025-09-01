@@ -1,0 +1,54 @@
+<div class="flex items-center justify-center min-h-[calc(100vh-100px)]">
+  <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold text-center text-gray-800">Login</h2>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="anda@email.com">
+
+        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="mt-1 text-xs text-red-600">
+          <span *ngIf="loginForm.get('email')?.errors?.['required']">Email wajib diisi.</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['email']">Format email tidak valid.</span>
+        </div>
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="********">
+
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="mt-1 text-xs text-red-600">
+          <span *ngIf="loginForm.get('password')?.errors?.['required']">Password wajib diisi.</span>
+        </div>
+      </div>
+
+      <div *ngIf="loginError" class="p-3 text-sm text-red-700 bg-red-100 rounded-md">
+        {{ loginError }}
+      </div>
+
+      <div>
+        <button
+          type="submit"
+          [disabled]="loginForm.invalid"
+          class="w-full px-4 py-2 font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+          Login
+        </button>
+      </div>
+    </form>
+    <p class="text-sm text-center text-slate-500">
+      Belum punya akun?
+      <a routerLink="/register" class="font-medium text-teal-600 hover:underline">Daftar di sini</a>
+    </p>
+  </div>
+</div>

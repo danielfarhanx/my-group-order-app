@@ -1,0 +1,45 @@
+#File ini harus diletakkan di root direktori proyek Anda.
+#Dependensi & File Build (Umum)
+#---------------------------------
+#Jangan pernah push folder node_modules
+node_modules/
+
+#Jangan push file environment yang berisi kunci rahasia
+.env
+
+#Jangan push file log
+.log
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+
+#Konfigurasi Editor & OS
+#-------------------------
+.idea/
+.vscode/
+*.suo
+.ntvs
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+#=== FRONTEND (Angular) ===
+#--------------------------
+#Folder output build Angular
+/frontend/my-group-order-app-ui/dist/
+
+#Cache Angular
+/frontend/my-group-order-app-ui/.angular/cache/
+
+#Laporan cakupan tes
+/frontend/my-group-order-app-ui/coverage/
+
+#File yang dihasilkan oleh ng add @angular/pwa
+/frontend/my-group-order-app-ui/ngsw.json
+
+#=== BACKEND (Express.js / Node.js) ===
+#----------------------------------------
+#Folder output build TypeScript
+/backend/my-group-order-app-api/dist/
+/backend/my-group-order-app-api/build/

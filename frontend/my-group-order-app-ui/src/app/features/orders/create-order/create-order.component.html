@@ -1,0 +1,95 @@
+<app-navbar></app-navbar>
+
+<main class="container mx-auto p-4 md:p-6">
+  <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md border border-slate-200">
+    <h1 class="text-2xl font-bold text-slate-800 mb-6">Buat Order Baru</h1>
+
+    <form [formGroup]="orderForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="title" class="block text-sm font-medium text-slate-700">Judul Order</label>
+          <input id="title" type="text" formControlName="title" placeholder="Makan Siang Bareng" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+        </div>
+        <div>
+          <label for="store_name" class="block text-sm font-medium text-slate-700">Nama Toko/Restoran</label>
+          <input id="store_name" type="text" formControlName="store_name" placeholder="Kopi Kenangan" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+        </div>
+      </div>
+      <div>
+        <label for="deadline" class="block text-sm font-medium text-slate-700">Batas Waktu Pemesanan</label>
+        <input id="deadline" type="datetime-local" formControlName="deadline" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+
+        <p *ngIf="timeUntilCloseMessage" class="mt-1 text-xs text-teal-600 font-semibold">
+          {{ timeUntilCloseMessage }}
+        </p>
+
+        <div *ngIf="orderForm.get('deadline')?.invalid && orderForm.get('deadline')?.touched" class="mt-1 text-xs text-rose-600">
+          <span *ngIf="orderForm.get('deadline')?.errors?.['required']">
+            Batas waktu wajib diisi.
+          </span>
+          <span *ngIf="orderForm.get('deadline')?.errors?.['pastDate']">
+            Batas waktu tidak boleh di masa lampau.
+          </span>
+        </div>
+
+      </div>
+
+      <hr class="my-6">
+
+      <h2 class="text-lg font-semibold text-slate-700">Parameter Biaya & Diskon</h2>
+      <div class="space-y-4 p-4 bg-slate-50 rounded-lg">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="discount_percentage" class="block text-sm font-medium text-slate-600">Diskon (%)</label>
+            <input id="discount_percentage" type="number" formControlName="discount_percentage" placeholder="cth: 20" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+            <p class="mt-1 text-xs text-slate-500">Potongan harga dalam persentase.</p>
+          </div>
+          <div>
+            <label for="max_discount" class="block text-sm font-medium text-slate-600">Maksimum Diskon (Rp)</label>
+            <input id="max_discount" type="number" formControlName="max_discount" placeholder="cth: 25000" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+            <p class="mt-1 text-xs text-slate-500">Batas atas potongan dari diskon.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="min_order_for_discount" class="block text-sm font-medium text-slate-600">Syarat Minimum Order (Rp)</label>
+            <input id="min_order_for_discount" type="number" formControlName="min_order_for_discount" placeholder="cth: 100000" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+            <p class="mt-1 text-xs text-slate-500">Total belanja agar diskon berlaku.</p>
+          </div>
+          <div>
+            <label for="service_and_delivery_fee" class="block text-sm font-medium text-slate-600">Biaya Tambahan (Rp)</label>
+            <input id="service_and_delivery_fee" type="number" formControlName="service_and_delivery_fee" placeholder="cth: 16000" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+            <p class="mt-1 text-xs text-slate-500">Untuk layanan & pengiriman.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <hr class="my-6">
+
+      <div formArrayName="menu_items" class="space-y-4">
+        <h2 class="text-lg font-semibold text-slate-700">Daftar Menu</h2>
+        <div *ngFor="let menuItem of menu_items.controls; let i=index" [formGroupName]="i" class="flex items-start gap-4 p-4 bg-slate-50 rounded-lg">
+          <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" formControlName="name" placeholder="Nama Item (cth: Kopi Susu)" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+            <input type="number" formControlName="price" placeholder="Harga (cth: 18000)" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+          </div>
+          <button type="button" (click)="removeMenuItem(i)" [disabled]="menu_items.length <= 1" class="px-3 py-2 text-white bg-rose-500 hover:bg-rose-600 rounded-md disabled:bg-slate-300 disabled:cursor-not-allowed">
+            Hapus
+          </button>
+        </div>
+      </div>
+      <button type="button" (click)="addMenuItem()" class="text-sm font-semibold text-teal-600 hover:text-teal-700">+ Tambah Item Menu</button>
+
+      <hr class="my-6">
+
+      <div class="flex justify-end">
+        <button type="submit" [disabled]="orderForm.invalid" class="px-6 py-3 font-semibold text-white bg-teal-500 rounded-lg hover:bg-teal-600 transition-colors shadow-sm hover:shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed">
+          Buka Order
+        </button>
+      </div>
+    </form>
+  </div>
+</main>

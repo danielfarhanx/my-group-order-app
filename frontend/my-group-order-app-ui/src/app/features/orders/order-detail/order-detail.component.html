@@ -1,0 +1,228 @@
+<app-navbar></app-navbar>
+
+<main class="container mx-auto p-4 md:p-6">
+  <ng-container *ngIf="order() as order">
+    <div *ngIf="order; else notFound">
+
+    <div class="mb-6 pb-4 border-b border-slate-200">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+
+        <div>
+          <h1 class="text-3xl font-bold text-slate-800">{{ order.title }}</h1>
+          <p class="text-md text-slate-500 mt-1">
+            di <span class="font-semibold">{{ order.store_name }}</span>
+          </p>
+          <div *ngIf="order.status === 'OPEN'" class="mt-2 text-sm font-semibold text-amber-700 bg-amber-100 inline-block px-3 py-1 rounded-full">
+            Tutup pada: {{ order.deadline | date:'medium' }}
+          </div>
+        </div>
+
+        <div *ngIf="order.created_by === authService.currentUser()?.id && order.status === 'OPEN'" class="flex items-center gap-x-3 mt-4 sm:mt-0 flex-shrink-0">
+          <button (click)="onCancelOrder()" class="text-sm font-semibold text-rose-600 hover:text-rose-800 px-3 py-2 rounded-lg hover:bg-rose-50">
+            Batalkan
+          </button>
+          <button (click)="onCloseOrder()" class="px-4 py-2 font-bold text-white bg-teal-500 rounded-lg hover:bg-teal-600">
+            Tutup Order
+          </button>
+        </div>
+
+      </div>
+
+      <div *ngIf="order.status === 'CLOSED'" class="mt-4 p-3 text-sm text-center text-blue-800 bg-blue-100 rounded-lg">
+        Order ini sudah ditutup. Tidak ada lagi yang bisa bergabung atau mengubah pesanan.
+      </div>
+      <div *ngIf="order.status === 'CANCELED'" class="mt-4 p-3 text-sm text-center text-rose-800 bg-rose-100 rounded-lg">
+        Order ini telah dibatalkan.
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <div class="lg:col-span-2">
+        <h2 class="text-xl font-semibold text-slate-700 mb-4">Pilihan Menu</h2>
+        <div class="space-y-3">
+          <div *ngFor="let item of order.order_menu_items"
+                class="flex justify-between items-center p-4 bg-white rounded-lg border border-slate-200">
+            <span class="font-medium text-slate-800">{{ item.name }}</span>
+            <span class="font-semibold text-teal-600">{{ item.price | currency:'IDR':'Rp':'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="order.status === 'OPEN'" class="mt-8">
+          <form [formGroup]="joinOrderForm" (ngSubmit)="onJoinOrderSubmit()"
+                class="p-6 bg-white rounded-lg shadow-md border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800">Ikut Pesan Sekarang</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div class="md:col-span-2">
+                <label for="menuItem" class="block text-sm font-medium text-slate-700">Pilih Menu</label>
+                <select id="menuItem" formControlName="menuItem"
+                        class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+                  <option [ngValue]="null" disabled>-- Pilih item --</option>
+                  <option *ngFor="let item of order.order_menu_items" [ngValue]="item | json">
+                    {{ item.name }} ({{ item.price | currency:'IDR':'Rp' }})
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label for="quantity" class="block text-sm font-medium text-slate-700">Jumlah</label>
+                <input id="quantity" type="number" formControlName="quantity"
+                      class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-2">
+              </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+              <button type="submit" [disabled]="joinOrderForm.invalid"
+                      class="px-5 py-2.5 font-semibold text-white bg-teal-500 rounded-lg hover:bg-teal-600 transition-colors shadow-sm hover:shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed">
+                Tambahkan ke Pesanan Saya
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="lg:col-span-1">
+        <div class="sticky top-24 space-y-6">
+          <div class="bg-white p-5 rounded-lg shadow-md border">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Parameter Biaya</h3>
+            <ul class="space-y-2 text-sm text-slate-600">
+              <li class="flex justify-between"><span>Diskon:</span> <span class="font-semibold">{{ order.discount_percentage }}%</span></li>
+              <li class="flex justify-between"><span>Maks. Diskon:</span> <span class="font-semibold">{{ order.max_discount | currency:'IDR':'Rp':'1.0-0' }}</span></li>
+              <li class="flex justify-between"><span>Min. Order:</span> <span class="font-semibold">{{ order.min_order_for_discount | currency:'IDR':'Rp':'1.0-0' }}</span></li>
+              <li class="flex justify-between"><span>Biaya Tambahan:</span> <span class="font-semibold">{{ order.service_and_delivery_fee | currency:'IDR':'Rp':'1.0-0' }}</span></li>
+            </ul>
+          </div>
+
+          <div class="bg-white p-5 rounded-lg shadow-md border">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Summary Biaya</h3>
+            <div *ngIf="order.summary" class="space-y-2 text-sm">
+              <div class="flex justify-between text-slate-600">
+                <span>Total Pesanan</span>
+                <span>{{ order.summary.totalPesananKotor | currency:'IDR':'Rp':'1.0-0' }}</span>
+              </div>
+              <div class="flex justify-between text-green-600">
+                <span>Diskon</span>
+                <span>- {{ order.summary.potonganDiskon | currency:'IDR':'Rp':'1.0-0' }}</span>
+              </div>
+              <hr>
+              <div class="flex justify-between text-slate-600">
+                <span>Subtotal</span>
+                <span>{{ order.summary.totalPesananSetelahDiskon | currency:'IDR':'Rp':'1.0-0' }}</span>
+              </div>
+              <div class="flex justify-between text-slate-600">
+                <span>Biaya Tambahan</span>
+                <span>+ {{ order.summary.biayaTambahan | currency:'IDR':'Rp':'1.0-0' }}</span>
+              </div>
+              <hr class="border-dashed">
+              <div class="flex justify-between font-bold text-slate-800 text-base pt-1">
+                <span>GRAND TOTAL</span>
+                <span>{{ order.summary.grandTotal | currency:'IDR':'Rp':'1.0-0' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-lg shadow-md border">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">
+              Daftar Pesanan Peserta ({{ order.participant_orders?.length || 0 }})
+            </h3>
+
+          <div *ngIf="order.participant_orders && order.participant_orders.length > 0; else noParticipants" class="space-y-3">
+
+            <div *ngFor="let pOrder of order.summary.participantOrdersWithFinalPrice" class="pb-3 border-b last:border-b-0">
+
+              <ng-container *ngIf="editingOrderId !== pOrder.id">
+                <div class="flex justify-between items-center">
+
+                  <div class="flex items-center">
+                    <span class="font-semibold text-slate-700">{{ pOrder.profiles?.full_name || 'Tidak diketahui' }}</span>
+
+                    <span *ngIf="order.status !== 'OPEN'">
+                      <span *ngIf="pOrder.payment_status === 'PAID'" class="ml-2 text-xs font-semibold text-green-800 bg-green-100 px-2 py-0.5 rounded-full">Lunas</span>
+                      <span *ngIf="pOrder.payment_status !== 'PAID'" class="ml-2 text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Belum Lunas</span>
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-x-3">
+                    <span class="font-bold text-teal-600 text-base">
+                      {{ pOrder.finalPrice | currency:'IDR':'Rp':'1.0-0' }}
+                    </span>
+
+                    <div *ngIf="pOrder.user_id === authService.currentUser()?.id && order.status === 'OPEN'" class="flex items-center gap-x-2">
+                      <button (click)="onStartEdit(pOrder)" title="Edit pesanan"
+                              class="text-slate-400 hover:text-teal-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                            <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                      <button (click)="onDeleteMyOrder(pOrder.id)" title="Hapus pesanan ini"
+                              class="text-slate-400 hover:text-rose-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                    <button
+                      *ngIf="order.created_by === authService.currentUser()?.id && order.status === 'CLOSED'"
+                      (click)="onTogglePaymentStatus(pOrder)"
+                      title="Ubah status pembayaran"
+                      class="text-xs font-semibold border rounded-md px-2 py-1 transition-colors"
+                      [ngClass]="{
+                        'border-green-300 text-green-700 hover:bg-green-50': pOrder.payment_status !== 'PAID',
+                        'border-amber-300 text-amber-700 hover:bg-amber-50': pOrder.payment_status === 'PAID'
+                      }">
+                      {{ pOrder.payment_status === 'PAID' ? 'Batalkan Lunas' : 'Tandai Lunas' }}
+                    </button>
+                  </div>
+                </div>
+                <div class="text-sm text-slate-500 mt-1">
+                  {{ pOrder.quantity }}x {{ pOrder.item_name }}
+                  <span class="italic">({{ pOrder.item_price * pOrder.quantity | currency:'IDR':'Rp' }})</span>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="editingOrderId === pOrder.id">
+                <div class="bg-teal-50 p-3 rounded-lg ring-1 ring-inset ring-teal-200">
+                  <p class="text-sm font-semibold text-slate-700">{{ pOrder.profiles?.full_name || 'Tidak diketahui' }}</p>
+                  <p class="text-xs text-slate-500">{{ pOrder.item_name }}</p>
+                  <form [formGroup]="editForm" (ngSubmit)="onSaveEdit(pOrder.id)" class="mt-2 flex items-center gap-x-3">
+                    <label for="quantity-edit" class="text-sm font-medium">Jumlah Baru:</label>
+                    <input id="quantity-edit" type="number" formControlName="quantity" class="w-20 px-2 py-1 border border-slate-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                    <button type="submit" [disabled]="editForm.invalid" class="px-3 py-1 text-sm font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-md disabled:bg-slate-300">
+                      Simpan
+                    </button>
+                    <button type="button" (click)="onCancelEdit()" class="text-sm text-slate-500 hover:underline">Batal</button>
+                  </form>
+                </div>
+              </ng-container>
+
+            </div>
+          </div>
+
+            <ng-template #noParticipants>
+              <div class="text-center py-4">
+                <p class="text-sm text-slate-400">Belum ada yang bergabung. Jadilah yang pertama!</p>
+              </div>
+            </ng-template>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    </div>
+
+    <ng-template #notFound>
+      <div class="text-center py-20">
+        <h2 class="text-2xl font-bold text-slate-700">Oops! Order Tidak Ditemukan</h2>
+        <p class="text-slate-500 mt-2">Order dengan ID ini tidak ada atau sudah dihapus.</p>
+        <a routerLink="/dashboard" class="mt-4 inline-block px-4 py-2 font-bold text-white bg-teal-500 rounded-md hover:bg-teal-600">Kembali ke Dashboard</a>
+      </div>
+    </ng-template>
+  </ng-container>
+
+  <ng-template #loading>
+    <p class="text-center text-slate-500 py-20">Memuat detail order...</p>
+  </ng-template>
+</main>
