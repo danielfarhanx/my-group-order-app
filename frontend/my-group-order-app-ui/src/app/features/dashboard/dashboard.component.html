@@ -67,10 +67,24 @@
           </p>
 
           <div class="mt-4 flex justify-between items-center">
-            <span class="text-sm font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
-              {{ order.participant_orders?.length || 0 }} Peserta
-            </span>
+
+            <div class="flex items-center gap-x-4">
+              <span class="text-sm font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
+                {{ order.participant_orders?.length || 0 }} Peserta
+              </span>
+
+              <ng-container *ngIf="order.status === 'CLOSED'">
+                <span *ngIf="findMyPaymentStatus(order) === 'PAID'" class="text-xs font-semibold text-green-800 bg-green-100 px-2 py-1 rounded-full">
+                  Anda Sudah Bayar
+                </span>
+                <span *ngIf="findMyPaymentStatus(order) !== 'PAID'" class="text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-1 rounded-full">
+                  Anda Belum Bayar
+                </span>
+              </ng-container>
+            </div>
+
             <span class="text-xs text-slate-500 font-semibold">{{ order.deadline | date:'shortDate' }}</span>
+
           </div>
         </a>
 

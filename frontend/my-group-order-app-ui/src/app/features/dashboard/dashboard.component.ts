@@ -5,6 +5,7 @@ import { NavbarComponent } from '../../layout/navbar/navbar.component';
 import { OrderService, IOrder } from '../../core/services/order.service'; // <-- Import service dan interface
 import { from, Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,6 +15,7 @@ import { RouterLink } from '@angular/router';
 })
 export class DashboardComponent implements OnInit {
   private orderService = inject(OrderService);
+  public authService = inject(AuthService);
 
   // Gunakan Observable untuk menangani data secara asinkron
   activeOrders$!: Observable<IOrder[]>;
@@ -22,5 +24,12 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.activeOrders$ = from(this.orderService.getActiveOrders());
     this.closedOrders$ = from(this.orderService.getClosedOrdersForUser());
+  }
+
+  findMyPaymentStatus(order: IOrder): string | undefined {
+    const myOrder = order.participant_orders?.find(
+      p => p.user_id === this.authService.currentUser()?.id
+    );
+    return myOrder?.payment_status;
   }
 }
