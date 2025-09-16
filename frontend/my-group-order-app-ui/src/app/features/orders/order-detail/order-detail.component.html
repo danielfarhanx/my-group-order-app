@@ -174,7 +174,7 @@
                       {{ pOrder.finalPrice | currency:'IDR':'Rp':'1.0-0' }}
                     </span>
 
-                    <div *ngIf="pOrder.user_id === authService.currentUser()?.id && order.status === 'OPEN'" class="flex items-center gap-x-2">
+                    <div *ngIf="(pOrder.user_id === authService.currentUser()?.id || order.created_by === authService.currentUser()?.id) && order.status === 'OPEN'" class="flex items-center gap-x-2">
                       <button (click)="onStartEdit(pOrder)" title="Edit pesanan"
                               class="text-slate-400 hover:text-teal-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
