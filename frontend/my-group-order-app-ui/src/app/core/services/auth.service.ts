@@ -74,4 +74,26 @@ export class AuthService {
     const { data } = await this.supabase.auth.getSession();
     return data.session;
   }
+
+  // Forgot password: mengirim email reset password
+  resetPasswordRequest(email: string): Observable<{ error: AuthError | null }> {
+    if (!this.supabase) return from(Promise.resolve({ error: new AuthError('Supabase client not initialized on server', 500) }));
+    return from(
+      this.supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      })
+    ).pipe(
+      map(({ error }) => ({ error }))
+    );
+  }
+
+  // Update password dengan password baru
+  updatePassword(newPassword: string): Observable<{ error: AuthError | null }> {
+    if (!this.supabase) return from(Promise.resolve({ error: new AuthError('Supabase client not initialized on server', 500) }));
+    return from(
+      this.supabase.auth.updateUser({ password: newPassword })
+    ).pipe(
+      map(({ error }) => ({ error }))
+    );
+  }
 }

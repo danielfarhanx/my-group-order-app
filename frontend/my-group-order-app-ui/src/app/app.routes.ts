@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
+import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './features/auth/reset-password/reset-password.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { authGuard } from './core/guards/auth.guard';
 import { publicGuard } from './core/guards/public.guard'; // <-- 1. Import guard baru
@@ -18,6 +20,15 @@ export const routes: Routes = [
     path: 'register',
     component: RegisterComponent,
     canActivate: [publicGuard] // <-- 2. Tambahkan di sini
+  },
+  {
+    path: 'auth/forgot-password',
+    component: ForgotPasswordComponent,
+    canActivate: [publicGuard]
+  },
+  {
+    path: 'auth/reset-password',
+    component: ResetPasswordComponent
   },
 
   // Terapkan authGuard pada rute dashboard

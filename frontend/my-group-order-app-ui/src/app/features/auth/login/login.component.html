@@ -33,6 +33,12 @@
         </div>
       </div>
 
+      <div class="flex items-center justify-end">
+        <a routerLink="/auth/forgot-password" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+          Lupa password?
+        </a>
+      </div>
+
       <div *ngIf="loginError" class="p-3 text-sm text-red-700 bg-red-100 rounded-md">
         {{ loginError }}
       </div>
