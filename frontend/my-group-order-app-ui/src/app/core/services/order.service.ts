@@ -41,6 +41,15 @@ export interface IOrder {
 }
 // -----------------------
 
+export interface IRouletteResult {
+  id?: string;
+  order_id: string;
+  picker_ids: string[];
+  tries_count: number;
+  created_at?: string;
+}
+
+
 
 @Injectable({
   providedIn: 'root'
@@ -398,6 +407,56 @@ export class OrderService {
 
     // Pemicu refresh agar UI otomatis update
     // this.refreshTrigger.next();
+    return data;
+  }
+
+  async getRouletteResult(orderId: string): Promise<IRouletteResult | null> {
+    if (!this.supabase) return null;
+    const { data, error } = await this.supabase
+      .from('roulette_results')
+      .select('*')
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching roulette result:', error.message);
+      return null;
+    }
+    return data;
+  }
+
+  async saveRouletteResult(orderId: string, pickerIds: string[], triesCount: number): Promise<IRouletteResult> {
+    if (!this.supabase) throw new Error('Supabase not initialized');
+
+    const { data, error } = await this.supabase
+      .from('roulette_results')
+      .upsert({
+        order_id: orderId,
+        picker_ids: pickerIds,
+        tries_count: triesCount,
+        created_at: new Date().toISOString()
+      }, { onConflict: 'order_id' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving roulette result:', error.message);
+      throw error;
+    }
+    return data;
+  }
+
+  async deleteRouletteResult(orderId: string): Promise<any> {
+    if (!this.supabase) throw new Error('Supabase not initialized');
+    const { data, error } = await this.supabase
+      .from('roulette_results')
+      .delete()
+      .eq('order_id', orderId);
+
+    if (error) {
+      console.error('Error deleting roulette result:', error.message);
+      throw error;
+    }
     return data;
   }
 
