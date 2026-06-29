@@ -300,6 +300,29 @@ export class OrderService {
     return data;
   }
 
+  // --- METHOD BARU: Update Parameter Biaya ---
+  async updateOrderFees(orderId: string, feesData: {
+    service_and_delivery_fee: number;
+    discount_percentage: number;
+    max_discount: number;
+    min_order_for_discount: number;
+  }): Promise<any> {
+    if (!this.supabase) throw new Error('Supabase not initialized');
+
+    const { data, error } = await this.supabase
+      .from('orders')
+      .update(feesData)
+      .eq('id', orderId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating order fees:', error.message);
+      throw error;
+    }
+    return data;
+  }
+
   async getClosedOrdersForUser(): Promise<IOrder[]> {
     if (!this.supabase) return [];
 

@@ -40,6 +40,9 @@ export class OrderDetailComponent implements OnInit {
   triesCount = 0;
   isRolling = false;
   hasUnsavedResult = false;
+  // Fee editing state
+  isEditingFees = signal<boolean>(false);
+  feesForm!: FormGroup;
 
   joinOrderForm!: FormGroup; // <-- Deklarasi form group baru
 
@@ -49,6 +52,14 @@ export class OrderDetailComponent implements OnInit {
 
   ngOnInit(): void {
     // this.loadOrderData();
+
+    // Inisialisasi form untuk edit parameter biaya
+    this.feesForm = this.fb.group({
+      service_and_delivery_fee: [0, [Validators.required, Validators.min(0)]],
+      discount_percentage: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+      max_discount: [0, [Validators.required, Validators.min(0)]],
+      min_order_for_discount: [0, [Validators.required, Validators.min(0)]]
+    });
 
     // Inisialisasi form untuk ikut memesan
     this.joinOrderForm = this.fb.group({
@@ -264,7 +275,46 @@ export class OrderDetailComponent implements OnInit {
           this.loadRouletteResult(orderId);
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
+        (payload) => {
+          console.log('Perubahan real-time terdeteksi pada orders!', payload);
+          this.loadInitialOrderData(orderId);
+        }
+      )
       .subscribe();
+  }
+
+  startEditFees(): void {
+    const currentOrder = this.order();
+    if (!currentOrder) return;
+    this.feesForm.patchValue({
+      service_and_delivery_fee: currentOrder.service_and_delivery_fee || 0,
+      discount_percentage: currentOrder.discount_percentage || 0,
+      max_discount: currentOrder.max_discount || 0,
+      min_order_for_discount: currentOrder.min_order_for_discount || 0
+    });
+    this.isEditingFees.set(true);
+  }
+
+  cancelEditFees(): void {
+    this.isEditingFees.set(false);
+  }
+
+  async saveEditFees(): Promise<void> {
+    if (this.feesForm.invalid) return;
+    const orderId = this.route.snapshot.paramMap.get('id');
+    if (!orderId) return;
+
+    try {
+      await this.orderService.updateOrderFees(orderId, this.feesForm.value);
+      alert('Parameter biaya berhasil diperbarui!');
+      this.isEditingFees.set(false);
+      this.loadInitialOrderData(orderId);
+    } catch (error: any) {
+      alert(`Gagal memperbarui parameter biaya: ${error.message}`);
+    }
   }
 
   runRoulette(): void {

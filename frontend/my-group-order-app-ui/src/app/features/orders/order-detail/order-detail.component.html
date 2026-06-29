@@ -224,13 +224,69 @@
       <div class="lg:col-span-1">
         <div class="sticky top-24 space-y-6">
           <div class="bg-white p-5 rounded-lg shadow-md border">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">Parameter Biaya</h3>
-            <ul class="space-y-2 text-sm text-slate-600">
-              <li class="flex justify-between"><span>Diskon:</span> <span class="font-semibold">{{ order.discount_percentage }}%</span></li>
-              <li class="flex justify-between"><span>Maks. Diskon:</span> <span class="font-semibold">{{ order.max_discount | currency:'IDR':'Rp':'1.0-0' }}</span></li>
-              <li class="flex justify-between"><span>Min. Order:</span> <span class="font-semibold">{{ order.min_order_for_discount | currency:'IDR':'Rp':'1.0-0' }}</span></li>
-              <li class="flex justify-between"><span>Biaya Tambahan:</span> <span class="font-semibold">{{ order.service_and_delivery_fee | currency:'IDR':'Rp':'1.0-0' }}</span></li>
-            </ul>
+            <!-- Edit Mode Form -->
+            <div *ngIf="isEditingFees()">
+              <form [formGroup]="feesForm" (ngSubmit)="saveEditFees()" class="space-y-4">
+                <div class="flex justify-between items-center border-b pb-2 mb-3">
+                  <h3 class="text-base font-bold text-slate-800">Edit Parameter Biaya</h3>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Diskon (%)</label>
+                  <input type="number" formControlName="discount_percentage"
+                         class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-1.5 text-sm"
+                         min="0" max="100">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Maks. Diskon (Rp)</label>
+                  <input type="number" formControlName="max_discount"
+                         class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-1.5 text-sm"
+                         min="0">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Min. Order Untuk Diskon (Rp)</label>
+                  <input type="number" formControlName="min_order_for_discount"
+                         class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-1.5 text-sm"
+                         min="0">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider">Biaya Tambahan (Rp)</label>
+                  <input type="number" formControlName="service_and_delivery_fee"
+                         class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 px-3 py-1.5 text-sm"
+                         min="0">
+                </div>
+                <div class="flex justify-end gap-x-2 pt-2 border-t mt-3">
+                  <button type="button" (click)="cancelEditFees()"
+                          class="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md transition-colors">
+                    Batal
+                  </button>
+                  <button type="submit" [disabled]="feesForm.invalid"
+                          class="px-3 py-1.5 text-xs font-bold text-white bg-teal-500 hover:bg-teal-600 rounded-md transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- View Mode -->
+            <div *ngIf="!isEditingFees()">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Parameter Biaya</h3>
+                <button *ngIf="order.status === 'OPEN' && order.created_by === authService.currentUser()?.id"
+                        (click)="startEditFees()"
+                        class="text-xs font-semibold text-teal-600 hover:text-teal-800 transition-colors flex items-center gap-x-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                  Edit
+                </button>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-600">
+                <li class="flex justify-between"><span>Diskon:</span> <span class="font-semibold">{{ order.discount_percentage }}%</span></li>
+                <li class="flex justify-between"><span>Maks. Diskon:</span> <span class="font-semibold">{{ order.max_discount | currency:'IDR':'Rp':'1.0-0' }}</span></li>
+                <li class="flex justify-between"><span>Min. Order:</span> <span class="font-semibold">{{ order.min_order_for_discount | currency:'IDR':'Rp':'1.0-0' }}</span></li>
+                <li class="flex justify-between"><span>Biaya Tambahan:</span> <span class="font-semibold">{{ order.service_and_delivery_fee | currency:'IDR':'Rp':'1.0-0' }}</span></li>
+              </ul>
+            </div>
           </div>
 
           <div class="bg-white p-5 rounded-lg shadow-md border">
